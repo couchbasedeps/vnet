@@ -77,13 +77,7 @@ stop() ->
     undefined -> ok;
     Pid ->
       unlink(Pid),
-      [supervisor:terminate_child(Pid, Id)
-       || {Id, Child, _, _} <- supervisor:which_children(Pid),
-          is_pid(Child)
-      ],
-      exit(Pid, shutdown),
-      timer:sleep(50),
-      exit(Pid, kill),
+      proc_lib:stop(Pid),
       ok
   end.
 
