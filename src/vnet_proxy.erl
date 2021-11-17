@@ -100,17 +100,17 @@ translate_msg(Pid, Changed) when is_pid(Pid) ->
   ProxyPid = vnet_conn:maybe_proxy(Pid),
   {ProxyPid, Changed orelse (ProxyPid =/= Pid)};
 translate_msg(List, Changed) when is_list(List) ->
-  case lists:mapfoldl(fun translate_msg/2, false, List) of
+  case translate_list(List) of
     {_, false} -> {List, Changed};
     Other -> Other
   end;
 translate_msg(Tuple, Changed) when is_tuple(Tuple) ->
-  case translate_msg(tuple_to_list(Tuple), false) of
+  case translate_list(tuple_to_list(Tuple)) of
     {_, false}   -> {Tuple, Changed};
     {List, true} -> {list_to_tuple(List), true}
   end;
 translate_msg(Map, Changed) when is_map(Map) ->
-  case translate_msg(maps:to_list(Map), false) of
+  case translate_list(maps:to_list(Map)) of
     {_, false}   -> {Map, Changed};
     {List, true} -> {maps:from_list(List), true}
   end;
@@ -121,6 +121,17 @@ translate_msg(Term, Changed) ->
   %% external term format and finally converting it back to a fun. But
   %% it's not convenient, and not yet implemented.
   {Term, Changed}.
+
+translate_list([] = List) ->
+  {List, false};
+translate_list([H | T] = List) ->
+  {NewH, HChanged} = translate_msg(H, false),
+  {NewT, TChanged} = translate_msg(T, false),
+
+  case HChanged orelse TChanged of
+    true -> {[NewH | NewT], true};
+    false -> {List, false}
+  end.
 
 sync_noconnection(Pid, Type) ->
   Ref = monitor(process, Pid),
