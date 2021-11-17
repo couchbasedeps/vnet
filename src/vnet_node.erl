@@ -184,7 +184,7 @@ rpc_worker(Name) ->
       catch
         throw:Result -> exit({rpc, Result});
         exit:Reason  -> exit({badrpc, Reason});
-        error:Reason -> exit({badrpc, {Reason, erlang:get_stacktrace()}})
+        error:Reason:Stacktrace -> exit({badrpc, {Reason, Stacktrace}})
       end;
     norpc ->
       ok
